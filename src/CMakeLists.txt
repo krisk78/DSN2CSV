@@ -11,6 +11,12 @@ foreach(_DEP_LIB ${${PROJECT_NAME}_INTERFACES})
     list(APPEND ${PROJECT_NAME}_LINK_INTERFACE_LIBS ${_DEP_LIB}::${_DEP_LIB})
 endforeach()
 
+if(UNIX)
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    list(APPEND CMAKE_PREFIX_PATH "${VCPKG_ROOT}/installed/x64-linux-static")
+endif()
+
 add_executable(${PROJECT_NAME} "${PROJECT_NAME}.cpp" "${PROJECT_NAME}-main.cpp")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_LINK_PUBLIC_LIBS})
