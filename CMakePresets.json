@@ -80,9 +80,25 @@
       }
     },
     {
+      "name": "linux-debug-static",
+      "displayName": "Linux Debug Static",
+      "inherits": "linux-debug",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-linux-static"
+      }
+    },
+    {
       "name": "linux-release",
       "displayName": "Linux Release",
       "inherits": "linux-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-release-static",
+      "displayName": "Linux Release Static",
+      "inherits": "linux-debug-static",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
