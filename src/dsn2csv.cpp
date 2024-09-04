@@ -7,7 +7,11 @@
 
 int main(int argc, char* argv[])
 {
+#ifdef _WIN32
     DSNTreeApp app(false);
+#else
+	DSNTreeApp app;
+#endif
 
     auto ret = app.Arguments(argc, argv);
 	if (ret.length() != 0 && ret != "?")

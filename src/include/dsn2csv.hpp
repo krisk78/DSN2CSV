@@ -14,7 +14,11 @@ class DSNTreeApp : public ConsoleApp
 	friend struct dsn_walker;
 
 public:
+#ifdef _WIN32
 	DSNTreeApp(bool window_mode) : ConsoleApp(window_mode) {};
+#else
+	DSNTreeApp() : ConsoleApp() {};
+#endif
 
 	std::string Arguments(int argc, char* argv[]);
 

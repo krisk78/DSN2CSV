@@ -8,7 +8,8 @@
 #include <pugixml.hpp>
 
 #include <dsn2csv.hpp>
-//#include <utils/utils.hpp>
+#include <str-utils-static.hpp>
+#include <file-utils-static.hpp>
 
 std::string DSNTreeApp::Arguments(int argc, char* argv[])
 {

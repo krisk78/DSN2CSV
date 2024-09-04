@@ -11,5 +11,5 @@
       "name": "microsoft"
     }
   ],
-  "overlay-ports": [ "../lib/overlay-ports" ]
+  "overlay-ports": ["../overlay-ports"]
 }
