@@ -1,0 +1,21 @@
+{
+  "name": "dsn2csv",
+  "version": "1.0.0-beta",
+  "description": "Application that converts a DSN file to CSV",
+  "homepage": "https://github.com/krisk78/DSN2CSV",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    },
+    "consoleapp-static",
+    "str-utils-static",
+    "file-utils-static",
+    "pugixml"
+  ]
+}

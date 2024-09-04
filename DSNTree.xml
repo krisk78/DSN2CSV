@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dsn_properties>
+  <version>P21V01</version>   <!-- DSN version -->
+  <!--  FR
+        Hiérarchie des blocs.
+        S'applique à toutes les natures de DSN (S20.G00.05.001).
+        Chaque bloc 'block' est composé des balises optionnelles 'name', 'key', et des 'block' enfants. -->
+  <!--  EN
+        Hierarchy of blocks.
+        Applies to all DSN natures (S20.G00.05.001).
+        Each block node contains the optional nodes 'name', 'key', and one or more child 'block'. -->
+	<block id="S10.G00.00">
+	  <!--  FR
+	        Par défaut, la rubrique clé 'key' est la première rubrique du bloc lue (en général la rubrique 001).
+	        La balise 'key' définit la rubrique d'un bloc parent dont la valeur est ajoutée à chaque ligne de bloc enfant (par exemple le NIR).
+	        Vous devriez définir cette balise uniquement pour les blocs où la clé n'est pas la 1ère rubrique potentiellement lue.
+	        Si un bloc parent ne fournit pas une rubrique garantissant l'unicité, utilisez 'seq' dont la valeur est créée par le programme pour chaque entité (groupe unique de rubriques) contenue dans un même bloc.
+	        Un nouveau numéro de séquence 'seq' est attribué au sein d'un même bloc dès que le numéro de rubrique lue est inférieur ou égal au précédent.
+	        Si la balise du nom du bloc 'name' n'est pas définie, la valeur de la colonne correspondante dans le fichier produit est laissée vide.
+	        Notez que le programme ne gère pas les cardinalités, cette fonction étant déjà assurée par d'autres outils. -->
+    <!--  EN
+	        By default the 'key' wage type is the first wage type read in a block.
+	        Key node is only used for parent blocks to spread the corresponding wage type value in each child entries (ie employee id).
+	        You should set this node only if it is potentially different from default value.
+	        If the block doesn't provide a wage type with a clear unique value, use 'seq' for which value is created by the program for each entity (unique group of wage types) included in the same block.
+	        A new sequence 'seq' value is set in a same block each time the wage type number is less or equal the previous one.
+	        If the node 'name' is not set then the corresponding column value will be left empty.
+	        Note that the program doesn't check cardinalities because this feature is already provided by other tools. -->
+	  <name>Envoi</name>
+		<block id="S10.G00.01">
+		  <name>Emetteur</name>
+		</block>
+		<block id="S10.G00.02">
+		  <name>Contact</name>
+		</block>
+		<block id="S20.G00.05">
+		  <name>Declaration</name>
+			<block id="S20.G00.07">
+			  <name>ContactDeclare</name>
+			</block>
+			<block id="S20.G00.08">
+			  <name>IdentifiantOrganismeDestinataireAbsenceRattachement</name>
+			</block>
+			<block id="S21.G00.06">
+			  <name>Entreprise</name>
+				<block id="S21.G00.13">
+				  <name>Oeth</name>
+				</block>
+				<block id="S21.G00.11">
+				  <name>Etablissement</name>
+					<block id="S21.G00.12">
+					  <name>PaiementAide</name>
+          </block>
+					<block id="S21.G00.15">
+					  <name>PrevoyanceAdhesion</name>
+						<block id="S21.G00.16">
+						  <name>ChangementsDestinataireAdhesionPrevoyance</name>
+						</block>
+					</block>
+					<block id="S21.G00.82">
+					  <name>CotisationEtablissement</name>
+					</block>
+					<block id="S21.G00.20">
+					  <name>VersementOPS</name>
+					  <key>seq</key>
+						<block id="S21.G00.55">
+						  <name>ComposantVersement</name>
+						</block>
+					</block>
+					<block id="S21.G00.22">
+					  <name>CotisationBordereau</name>
+					  <key>seq</key>
+						<block id="S21.G00.23">
+						  <name>CotisationAgregee</name>
+						</block>
+					</block>
+					<block id="S21.G00.44">
+					  <name>AssujettissementFiscal</name>
+					</block>
+					<block id="S21.G00.30">
+					  <name>Individu</name>
+						<block id="S21.G00.31">
+						  <name>ChangementsIndividu</name>
+						</block>
+						<block id="S21.G00.34">
+						  <name>Penibilite</name>
+						</block>
+						<block id="S21.G00.40">
+						  <name>Contrat</name>
+							<block id="S21.G00.41">
+							  <name>ChangementsContrat</name>
+							</block>
+							<block id="S21.G00.60">
+							  <name>TravailArret</name>
+								<key>seq</key>    <!-- no wage type value of this block seems to be unique ? -->
+								<block id="S21.G00.66">
+								  <name>TempsPartielTherapeutique</name>
+								</block>
+							</block>
+							<block id="S21.G00.62">
+							  <name>ContratFin</name>
+							  <block id="S21.G00.63">
+							    <name>Preavis</name>
+							  </block>
+							</block>
+							<block id="S21.G00.65">
+							  <name>ContratSuspensionAutre</name>
+							</block>
+							<block id="S21.G00.70">
+							  <name>PrevoyanceAffiliation</name>
+								<key>012</key>
+								<block id="S21.G00.73">
+								  <name>AyantDroit</name>
+								</block>
+							</block>
+							<block id="S21.G00.71">
+							  <name>RetraiteComplementaire</name>
+								<block id="S21.G00.72">
+								  <name>AffiliationATortRetraiteComplementaire</name>
+								</block>
+							</block>
+						</block>
+						<block id="S21.G00.50">
+						  <name>VersementIndividu</name>
+							<key>003</key>
+							<block id="S21.G00.51">
+							  <name>Remuneration</name>
+								<key>002</key>
+								<block id="S21.G00.53">
+								  <name>Activite</name>
+								</block>
+							</block>
+							<block id="S21.G00.52">
+							  <name>Prime</name>
+							</block>
+							<block id="S21.G00.54">
+							  <name>RevenuAutre</name>
+							</block>
+							<block id="S21.G00.56">
+							  <name>RegulPAS</name>
+							</block>
+							<block id="S21.G00.78">
+							  <name>Base</name>
+								<block id="S21.G00.79">
+								  <name>BaseComposant</name>
+								</block>
+								<block id="S21.G00.81">
+								  <name>CotisationIndividuelle</name>
+								</block>
+							</block>
+							<block id="S21.G00.83">
+							  <name>RegularisationAffiliationRetraiteComplementaire</name>
+								<block id="S21.G00.84">
+								  <name>AncienneBaseAssujettieDeclareeorganismeRetraiteComplementaireDeclareeTort</name>
+								</block>
+							</block>
+							<block id="S21.G00.95">
+							  <name>AncienneBaseAssujettieDeclareeRegimeBaseRisqueMaladieVieillesseDeclareeTort</name>
+							</block>
+						</block>
+						<block id="S21.G00.86">
+						  <name>Anciennete</name>
+						</block>
+					</block>
+				</block>
+			</block>
+			<block id="S21.G00.85">
+			  <name>TravailLieu</name>
+			</block>
+			<block id="S89.G00.32">
+			  <name>BeneficiaireHonoraires</name>
+			  <key>seq</key>    <!-- no wage type value of this block seems to be unique ? -->
+			  <block id="S89.G00.33">
+			    <name>AvantagesNature</name>
+			  </block>
+			  <block id="S89.G00.35">
+			    <name>PriseEnChargeIndemnite</name>
+			  </block>
+			  <block id="S89.G00.43">
+			    <name>Remunerations</name>
+			  </block>
+			</block>
+			<block id="S89.G00.67">
+			  <name>DroitSupRegimeRSP</name>
+			</block>
+			<block id="S89.G00.87">
+			  <name>ActionsGratuites</name>
+			</block>
+			<block id="S89.G00.88">
+			  <name>OptionsTitres</name>
+			</block>
+			<block id="S89.G00.89">
+			  <name>Bspce</name>
+			</block>
+			<block id="S89.G00.91">
+			  <name>IndividuNonSalarie</name>
+				<block id="S89.G00.92">
+				  <name>BasesSpecifiquesIndividuNonSalarie</name>
+					<key>seq</key>    <!-- no wage type value of this block seems to be unique ? -->
+					<block id="S89.G00.93">
+					  <name>VTRegulPAS</name>
+					</block>
+					<block id="S89.G00.94">
+					  <name>CotisationIndividuNonSalarie</name>
+					</block>
+				</block>
+			</block>
+		</block>
+	</block>
+	<block id="S90.G00.90">
+	  <name>TotalEnvoi</name>
+	</block>
+</dsn_properties>

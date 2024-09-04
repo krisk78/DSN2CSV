@@ -1,0 +1,33 @@
+set(${PROJECT_NAME}_LINK_PUBLIC_LIBS "")
+set(${PROJECT_NAME}_LINK_INTERFACE_LIBS "")
+
+foreach(_DEP_LIB ${${PROJECT_NAME}_DEPENDENCIES})
+    find_package(${_DEP_LIB} CONFIG REQUIRED)
+    list(APPEND ${PROJECT_NAME}_LINK_PUBLIC_LIBS ${_DEP_LIB}::${_DEP_LIB})
+endforeach()
+
+foreach(_DEP_LIB ${${PROJECT_NAME}_INTERFACES})
+    find_package(${_DEP_LIB} CONFIG REQUIRED)
+    list(APPEND ${PROJECT_NAME}_LINK_INTERFACE_LIBS ${_DEP_LIB}::${_DEP_LIB})
+endforeach()
+
+add_executable(${PROJECT_NAME} "${PROJECT_NAME}.cpp" "${PROJECT_NAME}-main.cpp")
+
+target_link_libraries(${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_LINK_PUBLIC_LIBS})
+target_link_libraries(${PROJECT_NAME} INTERFACE ${${PROJECT_NAME}_LINK_INTERFACE_LIBS})
+
+target_include_directories(${PROJECT_NAME} 
+    PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#    $<INSTALL_INTERFACE:include>
+)
+
+#set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "include/${PROJECT_NAME}.hpp")
+
+install(TARGETS ${PROJECT_NAME}
+    EXPORT ${PROJECT_NAME}_targets
+    PUBLIC_HEADER DESTINATION include
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
