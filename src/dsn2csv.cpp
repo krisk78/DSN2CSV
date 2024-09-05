@@ -395,7 +395,7 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 #ifdef _WIN32
 	static const std::string CMD_LINE{ "copy /Y " };
 #elif __unix__
-	static const std::string CMD_LINE{ "cp " };
+	static const std::string CMD_LINE{ "cat " };
 #endif
 	static const unsigned long long DEFAULT_INCREMENT = 1000;
 	static const unsigned long long AVER_ROW_LEN = 25;
@@ -694,7 +694,11 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		tmppath.make_preferred();
 		outpath.make_preferred();
 		outpath_tmp.make_preferred();
+#ifdef _WIN32
 		std::string command{ CMD_LINE + tmppath.string() + " + " + outpath_tmp.string() + " " + outpath.string() + " > nul"};
+#elif __unix__
+		std::string command{ CMD_LINE + tmppath.string() + " " + outpath_tmp.string() + " > " + outpath.string() };
+#endif
 		auto ret = std::system(command.c_str());
 		outCnt++;
 		std::filesystem::remove(outpath_tmp);
