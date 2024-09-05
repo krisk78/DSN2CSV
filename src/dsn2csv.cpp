@@ -694,12 +694,10 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		tmppath.make_preferred();
 		outpath.make_preferred();
 		outpath_tmp.make_preferred();
-#ifdef _WIN32
-		std::string command{ CMD_LINE + tmppath.string() + " + " + outpath_tmp.string() + " " + outpath.string() + " > nul"};
-#elif __unix__
-		std::string command{ CMD_LINE + tmppath.string() + " " + outpath_tmp.string() + " > " + outpath.string() };
-#endif
-		auto ret = std::system(command.c_str());
+		std::vector<std::filesystem::path> inputFiles = { tmppath, outpath_tmp };
+		std::string statusmsg = concatenateFiles(inputFiles, outpath);
+		if (!statusmsg.empty())
+			std::cout << statusmsg << std::endl;
 		outCnt++;
 		std::filesystem::remove(outpath_tmp);
 	}

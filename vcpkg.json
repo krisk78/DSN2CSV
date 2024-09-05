@@ -1,6 +1,6 @@
 {
   "name": "dsn2csv",
-  "version": "1.0.2-beta",
+  "version": "1.0.3-beta",
   "description": "Application that converts a DSN file to CSV",
   "homepage": "https://github.com/krisk78/DSN2CSV",
   "license": "MIT",
