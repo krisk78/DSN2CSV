@@ -24,8 +24,10 @@ public:
 
 	// final parameters storage
 	std::filesystem::path prog_path;
-	std::string extension{ ".tree.csv" };
-	std::string dsndesc_fname{ "DSNTree.xml" };
+	std::filesystem::path prog_name;
+	std::string version;
+	std::string extension{ ".csv" };
+	std::string dsndesc_fname{ "DSN.xml" };
 	char decimal_sep{ ' ' };
 	std::filesystem::path dsndesc_path;
 	pugi::xml_document dsndesc_doc;

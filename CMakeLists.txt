@@ -13,6 +13,17 @@ set(PROJECT_NAME "dsn2csv")
 set(${PROJECT_NAME}_DEPENDENCIES "consoleapp-static;str-utils-static;file-utils-static;pugixml")
 set(${PROJECT_NAME}_INTERFACES "")
 
-project(${PROJECT_NAME})
+# Get the project version from vcpkg.json
+file(READ "${CMAKE_SOURCE_DIR}/vcpkg.json" VCPKG_JSON_CONTENT)
+string(REGEX MATCH "\"version\": \"([^\"]+)\"" _ ${VCPKG_JSON_CONTENT})
+set(PROJECT_VERSION ${CMAKE_MATCH_1})
+# Split into major, minor, patch and pre-release (if any)
+string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)(-.+)?" _ ${PROJECT_VERSION})
+set(PROJECT_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(PROJECT_VERSION_MINOR ${CMAKE_MATCH_2})
+set(PROJECT_VERSION_PATCH ${CMAKE_MATCH_3})
+set(PROJECT_VERSION_PRERELEASE ${CMAKE_MATCH_4})
+
+project(${PROJECT_NAME} VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
 
 add_subdirectory(src)
