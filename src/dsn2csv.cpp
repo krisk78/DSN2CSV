@@ -392,11 +392,6 @@ std::string substc(const std::string& str, const char _old, const char _new)
 
 void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 {
-#ifdef _WIN32
-	static const std::string CMD_LINE{ "copy /Y " };
-#elif __unix__
-	static const std::string CMD_LINE{ "cat " };
-#endif
 	static const unsigned long long DEFAULT_INCREMENT = 1000;
 	static const unsigned long long AVER_ROW_LEN = 25;
 	static const char DSN_SEPARATOR = ',';
