@@ -9,7 +9,7 @@
 
 struct dsn_walker;
 
-class DSNTreeApp : public ConsoleApp
+class DSNTreeApp : public ConsoleApp::ConsoleApp
 {
 	friend struct dsn_walker;
 

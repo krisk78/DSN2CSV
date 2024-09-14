@@ -30,44 +30,44 @@ void DSNTreeApp::SetUsage()
 	us.set_syntax(prog_name.string() + " " + FILE_ARG + " [" + us.switch_char + "o:" + EXTENSION_ARG + "] [" + us.switch_char + "c:" + CONVERT_ARG
 		+ "] [" + us.switch_char + "x:" + XMLDOC_ARG + "] [" + us.switch_char + "t] [" + us.switch_char + "v]");
 	
-	Unnamed_Arg file{ FILE_ARG };
+	Usage::Unnamed_Arg file{ FILE_ARG };
 	file.many = true;
 	file.set_required(true);
 	file.helpstring = "Filename(s) to process.";
 	us.add_Argument(file);
 	
-	Named_Arg o{ EXTENSION_ARG };
+	Usage::Named_Arg o{ EXTENSION_ARG };
 	o.shortcut_char = 'o';
-	o.set_type(Argument_Type::string);
+	o.set_type(Usage::Argument_Type::string);
 	o.set_default_value(extension);
 	o.helpstring = "Extension of the output file(s).";
 	us.add_Argument(o);
 
-	Named_Arg x{ XMLDOC_ARG };
+	Usage::Named_Arg x{ XMLDOC_ARG };
 	x.shortcut_char = 'x';
-	x.set_type(Argument_Type::string);
+	x.set_type(Usage::Argument_Type::string);
 	x.set_default_value(dsndesc_fname);
 	x.helpstring = "XML document describing the DSN structure.";
 	us.add_Argument(x);
 
-	Named_Arg c{ CONVERT_ARG };
+	Usage::Named_Arg c{ CONVERT_ARG };
 	c.shortcut_char = 'c';
-	c.set_type(Argument_Type::string);
+	c.set_type(Usage::Argument_Type::string);
 	std::string def{ "" };
 	def.push_back(decimal_sep);
 	c.set_default_value(def);
 	c.helpstring = "Target decimal separator used for conversion.";
 	us.add_Argument(c);
 
-	Named_Arg t{ TRANSPOSE_ARG };
+	Usage::Named_Arg t{ TRANSPOSE_ARG };
 	t.shortcut_char = 't';
-	t.set_type(Argument_Type::simple);
+	t.set_type(Usage::Argument_Type::simple);
 	t.helpstring = "Transpose wage types in columns.";
 	us.add_Argument(t);
 
-	Named_Arg v{ VERSION_ARG };
+	Usage::Named_Arg v{ VERSION_ARG };
 	v.shortcut_char = 'v';
-	v.set_type(Argument_Type::simple);
+	v.set_type(Usage::Argument_Type::simple);
 	v.helpstring =	"Check that the DSN version of file matches the one given\n"
 					"in the DSN description XML file.";
 	us.add_Argument(v);
@@ -170,11 +170,11 @@ DSNTreeApp::block& DSNTreeApp::getParent(const block& bl)
 
 // check if the string value represents a numeric value
 // if _signed is true then the presence of a sign '+' or '-' is allowed at begin or end of the string, else no sign is allowed
-bool isNumeric(const std::string& str, const std::string& fmtchars = ".", bool _signed = true)
+static bool isNumeric(const std::string& str, const std::string& fmtchars = ".", bool _signed = true)
 {
 	static const std::string NUMBERS{ "0123456789" };
 
-	auto trimed = trimc(str);
+	auto trimed = str_utils::trimc(str);
 	if (trimed.length() == 0)
 		return false;
 	std::string extNum{ NUMBERS + fmtchars };
@@ -192,7 +192,7 @@ bool isNumeric(const std::string& str, const std::string& fmtchars = ".", bool _
 	return true;
 }
 
-bool checkBlock(const std::string& blstr)
+static bool checkBlock(const std::string& blstr)
 {
 	static const int BLOCK_LENGTH{ 10 };
 
@@ -218,7 +218,7 @@ bool checkBlock(const std::string& blstr)
 	return true;
 }
 
-std::string getBlockName(const std::string& sigstr)
+static std::string getBlockName(const std::string& sigstr)
 {
 	auto itr = sigstr.rfind('.');
 	if (itr == std::string::npos)
@@ -226,7 +226,7 @@ std::string getBlockName(const std::string& sigstr)
 	return sigstr.substr(0, itr);
 }
 
-bool checkSignal(const std::string& sigstr)
+static bool checkSignal(const std::string& sigstr)
 {
 	static const int WT_LENGTH{ 3 };
 
@@ -369,7 +369,7 @@ void DSNTreeApp::PreProcess()
 	std::cout << "File " << dsndesc_path.filename() << ": DSN blocks description is version " << dsn_version << "." << std::endl;
 }
 
-std::string formatNumber(const unsigned long num, const size_t len)
+static std::string formatNumber(const unsigned long num, const size_t len)
 {
 	std::string ret = std::to_string(num);
 	while (ret.length() < len)
@@ -377,7 +377,7 @@ std::string formatNumber(const unsigned long num, const size_t len)
 	return ret;
 }
 
-std::string substc(const std::string& str, const char _old, const char _new)
+static std::string substc(const std::string& str, const char _old, const char _new)
 {
 	std::string res{ str };
 
@@ -402,10 +402,10 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 
 	// initialize input file
 	auto fsize = std::filesystem::file_size(file);
-	auto EOL_type = file_EOL(file);
+	auto EOL_type = file_utils::file_EOL(file);
 	auto EOL_len = EOL_length(EOL_type);
 	char EOL_delim = '\n';
-	if (EOL_type == EOL::Mac)
+	if (EOL_type == file_utils::EOL::Mac)
 		EOL_delim = '\r';
 	std::ifstream infile(file, std::ios::binary);
 	std::uintmax_t lineCnt{ 0 };
@@ -467,7 +467,7 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		else
 			if (buf.substr(0, siglen) == VERSION_SIGNAL)
 			{
-				if (EOL_type == EOL::Windows)
+				if (EOL_type == file_utils::EOL::Windows)
 					if (buf.back() == '\r')
 						buf.pop_back();
 				auto itr = buf.find(',');
@@ -533,7 +533,7 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		auto buflen = buf.length();
 		if (buflen != 0)
 		{
-			if (EOL_type == EOL::Windows)
+			if (EOL_type == file_utils::EOL::Windows)
 				if (buf.back() == '\r')
 					buf.pop_back();
 			bool errfmt{ false };
@@ -690,7 +690,7 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		outpath.make_preferred();
 		outpath_tmp.make_preferred();
 		std::vector<std::filesystem::path> inputFiles = { tmppath, outpath_tmp };
-		std::string statusmsg = concatenateFiles(inputFiles, outpath);
+		std::string statusmsg = file_utils::concatenateFiles(inputFiles, outpath);
 		if (!statusmsg.empty())
 			std::cout << statusmsg << std::endl;
 		outCnt++;
