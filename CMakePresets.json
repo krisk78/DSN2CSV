@@ -88,6 +88,16 @@
       }
     },
     {
+      "name": "linux-release-static",
+      "displayName": "Linux Release Static",
+      "inherits": "linux-release",
+      "cacheVariables": {
+        "CMAKE_EXE_LINKER_FLAGS": "-static-libgcc -static-libstdc++ -static",
+        "CMAKE_CXX_FLAGS": "-static-libgcc -static-libstdc++",
+        "dsn2csv_STATIC_LINK": "ON"
+      }
+    },
+    {
       "name": "macos-debug",
       "displayName": "macOS Debug",
       "generator": "Ninja",
