@@ -5,11 +5,10 @@
 #include <iostream>
 #include <sstream>
 
-#include <pugixml.hpp>
+//#include <pugixml.hpp>
 
 #include <dsn2csv.hpp>
 #include <str-utils-static.hpp>
-#include <file-utils-static.hpp>
 
 std::string DSNTreeApp::Arguments(int argc, char* argv[])
 {
@@ -26,15 +25,38 @@ std::string DSNTreeApp::Arguments(int argc, char* argv[])
 
 void DSNTreeApp::SetUsage()
 {
-	us.description = prog_name.string() + " v" + version + " - Converts a DSN file to CSV, increasing its readibility.";
-	us.set_syntax(prog_name.string() + " " + FILE_ARG + " [" + us.switch_char + "o:" + EXTENSION_ARG + "] [" + us.switch_char + "c:" + CONVERT_ARG
-		+ "] [" + us.switch_char + "x:" + XMLDOC_ARG + "] [" + us.switch_char + "t] [" + us.switch_char + "v]");
+	us.description = prog_name.string() + " v" + version + " - Converts a DSN file to CSV/xlsx, increasing its readability.";
+	//us.set_syntax(prog_name.string() + " " + FILE_ARG + " [" + us.switch_char + "o:" + EXTENSION_ARG + "] [" + us.switch_char + "c:" + CONVERT_ARG
+		//+ "] [" + us.switch_char + "x:" + XMLDOC_ARG + "] [" + us.switch_char + "t] [" + us.switch_char + "v]");
+	us.set_syntax(prog_name.string() + " " + FILE_ARG
+		+ " " + us.switch_char + "r:" + DSN_REF_ARG
+		+ " [" + us.switch_char + "f"
+			+ " [" + us.switch_char + "o:" + EXTENSION_ARG + "]]"
+		+ " [" + us.switch_char + "x]"
+		+ " [" + us.switch_char + "l]"
+		+ " [" + us.switch_char + "c:" + CONVERT_ARG + "]"
+		+ " [" + us.switch_char + "t]"
+		+ " [" + us.switch_char + "v]"
+	);
 	
 	Usage::Unnamed_Arg file{ FILE_ARG };
 	file.many = true;
 	file.set_required(true);
 	file.helpstring = "Filename(s) to process.";
 	us.add_Argument(file);
+
+	Usage::Named_Arg r{ DSN_REF_ARG };
+	r.shortcut_char = 'r';
+	r.set_type(Usage::Argument_Type::string);
+	r.set_required(true);
+	r.helpstring = "DSN description document (dsn-datatypes-CTXXXX.xlsx).";
+	us.add_Argument(r);
+
+	Usage::Named_Arg f{ CSV_ARG };
+	f.shortcut_char = 'f';
+	f.set_type(Usage::Argument_Type::simple);
+	f.helpstring = "Create CSV file(s).";
+	us.add_Argument(f);
 	
 	Usage::Named_Arg o{ EXTENSION_ARG };
 	o.shortcut_char = 'o';
@@ -43,12 +65,24 @@ void DSNTreeApp::SetUsage()
 	o.helpstring = "Extension of the output file(s).";
 	us.add_Argument(o);
 
-	Usage::Named_Arg x{ XMLDOC_ARG };
+	Usage::Named_Arg x{ XLSX_ARG };
 	x.shortcut_char = 'x';
-	x.set_type(Usage::Argument_Type::string);
-	x.set_default_value(dsndesc_fname);
-	x.helpstring = "XML document describing the DSN structure.";
+	x.set_type(Usage::Argument_Type::simple);
+	x.helpstring = "Create Excel file(s).";
 	us.add_Argument(x);
+
+	//Usage::Named_Arg x{ XMLDOC_ARG };
+	//x.shortcut_char = 'x';
+	//x.set_type(Usage::Argument_Type::string);
+	//x.set_default_value(dsndesc_fname);
+	//x.helpstring = "XML document describing the DSN structure.";
+	//us.add_Argument(x);
+
+	Usage::Named_Arg l{ CATEGORY_ARG };
+	l.shortcut_char = 'l';
+	l.set_type(Usage::Argument_Type::simple);
+	l.helpstring = "Add categories text.";
+	us.add_Argument(l);
 
 	Usage::Named_Arg c{ CONVERT_ARG };
 	c.shortcut_char = 'c';
@@ -92,6 +126,20 @@ std::string DSNTreeApp::CheckArguments()
 {
 	std::string retmsg{ "" };
 
+	auto csv_sw = us.get_Argument(CSV_ARG);
+	if (!csv_sw->value.empty() && csv_sw->value.front() == "true")
+		csv = true;
+
+	auto xlsx_sw = us.get_Argument(XLSX_ARG);
+	if (!xlsx_sw->value.empty() && xlsx_sw->value.front() == "true")
+		xlsx = true;
+
+	if (!csv && !xlsx)
+	{
+		retmsg = "No option f (csv) or x (xlsx) has been specified for output file: nothing to do.";
+		return retmsg;
+	}
+
 	auto ext = us.get_Argument(EXTENSION_ARG);
 	if (!ext->value.empty() && !ext->value.front().empty())
 	{
@@ -100,9 +148,11 @@ std::string DSNTreeApp::CheckArguments()
 			extension.insert(0, ".");
 	}
 
-	auto xml = us.get_Argument(XMLDOC_ARG);
-	if (!xml->value.empty() && !xml->value.front().empty())
-		dsndesc_fname = xml->value.front();
+	//auto xml = us.get_Argument(XMLDOC_ARG);
+	auto dsn = us.get_Argument(DSN_REF_ARG);
+	//if (!xml->value.empty() && !xml->value.front().empty())
+		//dsndesc_fname = xml->value.front();
+	dsndesc_fname = dsn->value.front();
 	try {
 		dsndesc_path = dsndesc_fname; }
 	catch (const std::exception&) {
@@ -118,6 +168,10 @@ std::string DSNTreeApp::CheckArguments()
 			return retmsg;
 		}
 	}
+
+	auto cat = us.get_Argument(CATEGORY_ARG);
+	if (!cat->value.empty() && cat->value.front() == "true")
+		use_cat_texts = true;
 
 	auto dec = us.get_Argument(CONVERT_ARG);
 	if (!dec->value.empty() && !dec->value.front().empty())
@@ -166,6 +220,20 @@ DSNTreeApp::block& DSNTreeApp::getParent(const block& bl)
 	if (itr == block_hie.end())
 		return BAD_BLOCK;
 	return block_list[(*itr).second];
+}
+
+const std::string& DSNTreeApp::getCategoryText(const std::string& block_id, const std::string& category_id)
+{
+	static const std::string noCatText = "";
+
+	auto block_itr = cat_texts.find(block_id);
+	if (block_itr != cat_texts.end())
+	{
+		auto cat_itr = block_itr->second.find(category_id);
+		if (cat_itr != block_itr->second.end())
+			return cat_itr->second;
+	}
+	return noCatText;
 }
 
 // check if the string value represents a numeric value
@@ -242,7 +310,7 @@ static bool checkSignal(const std::string& sigstr)
 	return checkBlock(block);
 }
 
-struct dsn_walker : pugi::xml_tree_walker
+/*struct dsn_walker : pugi::xml_tree_walker
 {
 	const std::string ROOT_NODE{ "dsn_properties" };
 	const std::string VERSION_NODE{ "version" };
@@ -353,19 +421,168 @@ struct dsn_walker : pugi::xml_tree_walker
 		}
 		return true;		// continue to browse the nodes
 	}
-};
+};*/
+
+std::string DSNTreeApp::getKey(const std::string& id) const
+{
+	// By default the 'key' wage type is the first wage type read in a block (mainly "001").
+	// If the read category matches the key, then a new record is created on a new line for the current block (in transpose mode)
+	// If key is "seq" then a new record is created when the read category is lower or equal to the previous one in the same block
+
+	const std::string default_key = "001";
+
+	auto itr = config.keys.find(id);
+	if (itr != config.keys.end())
+		return itr->second;
+	return default_key;
+}
+
+void DSNTreeApp::addBlock(const std::string& id, const size_t parent)
+{
+	block bl{ id };
+	if (!checkBlock(id))	// check syntax
+		throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": block id " + id + " is not valid.");
+	bl.key = getKey(id);
+	auto new_index = block_list.size();
+	if (blockIndex(bl.id) != new_index)
+		throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": block id " + id + " already exists.");
+	block_list.push_back(bl);
+	block_index[id] = new_index;
+	block_hie[new_index] = parent;
+}
+
+void DSNTreeApp::readRootNodes(xlnt::workbook& wb)
+{
+	auto ws = wb.sheet_by_title(config.header.worksheet);
+	auto cell = ws.cell(config.header.cell);
+	while (cell.has_value())
+	{
+		addBlock(cell.to_string(), 0);
+		cell = cell.offset(0, 1);
+	}
+	// restore missing parents as for S20.G00.05 (parent S10.G00.00 instead ROOT)
+	for (auto& miss_itr : config.missing)
+	{
+		auto bl_index = blockIndex(miss_itr.first);
+		if (bl_index != block_list.size())
+		{
+			auto parent_index = blockIndex(miss_itr.second);
+			if (parent_index == block_list.size())
+				throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": parent of block " + miss_itr.first + " does not exist.");
+			block_hie[bl_index] = parent_index;
+		}
+	}
+}
+
+void DSNTreeApp::readBlocks(xlnt::workbook& wb)
+{
+	auto ws = wb.sheet_by_title(config.blocks.worksheet);
+	auto cell = ws.cell(config.blocks.cell);
+	while (cell.has_value())
+	{
+		auto parent = blockIndex(cell.offset(config.blocks.parent_column - cell.column_index(), 0).to_string());
+		if (parent == block_list.size())
+			throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": parent is missing for block " + cell.to_string() + ".");
+		addBlock(cell.to_string(), parent);
+		cell = cell.offset(0, 1);
+	}
+}
+
+void DSNTreeApp::readFields(xlnt::workbook& wb)
+{
+	auto ws = wb.sheet_by_title(config.fields.worksheet);
+	auto cell = ws.cell(config.fields.cell);
+	while (cell.has_value())
+	{
+		auto bl_index = blockIndex(cell.offset(config.fields.block_column - cell.column_index(), 0).to_string());
+		if (bl_index == block_list.size())
+			throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": block is missing for category " + cell.to_string() + ".");
+		if (block_list[bl_index].name == "" || use_cat_texts)
+		{
+			auto texts = str_utils::split(cell.offset(config.fields.descr_column - cell.column_index(), 0).to_string(), config.fields.text_delimiter);
+			if (texts.size() != 2 || texts[0] == "" || texts[1] == "")
+				throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": unknown text format for block " + block_list[bl_index].id
+					+ ", category " + cell.to_string() + ".");
+			if (block_list[bl_index].name == "")
+				block_list[bl_index].name = texts[0];
+			if (use_cat_texts)
+			{
+				if (getCategoryText(block_list[bl_index].id, cell.to_string()) != "")
+					throw ApplicationException("Error in DSN descriptor file " + dsndesc_path.string() + ": category " + cell.to_string() + " of block "
+						+ block_list[bl_index].id + " is duplicated.");
+				cat_texts[block_list[bl_index].id][cell.to_string()] = texts[1];
+			}
+		}
+		cell = cell.offset(0, 1);
+	}
+}
+
+size_t DSNTreeApp::getDepth(size_t node)
+{
+	const size_t ROOT_NODE = 0;
+
+	if (node == ROOT_NODE)
+		return 0;
+	
+	// If the depth is already calculated, return it
+	if (depth_cache.find(node) != depth_cache.end())
+		return depth_cache[node];
+
+	// Calculate the depth of the parent node
+	size_t parent = block_hie[node];
+	size_t depth = getDepth(parent) + 1;
+
+	// Store the calculated depth in the cache
+	depth_cache[node] = depth;
+
+	return depth;
+}
+
+void DSNTreeApp::getDSNDescription()
+{
+	xlnt::workbook wb;
+	wb.load(dsndesc_fname);
+
+	// get DSN version
+	auto ws = wb.sheet_by_title(config.version.worksheet);
+	dsn_version = ws.cell(config.version.cell).to_string();
+
+	// get childs of root node
+	readRootNodes(wb);
+
+	// get blocks and hierarchy
+	readBlocks(wb);
+
+	// once all blocks are created, we can evaluate deepest blocks hierarchy level
+	dsntree_depth = 0;
+	depth_cache.clear();
+	for (const auto& itr : block_hie)
+	{
+		auto depth = getDepth(itr.first);
+		if (depth > dsntree_depth)
+			dsntree_depth = depth;
+	}
+
+	// get blocks and categories text
+	readFields(wb);
+}
 
 void DSNTreeApp::PreProcess()
 {
-	pugi::xml_parse_result result = dsndesc_doc.load_file(dsndesc_path.c_str());
+/*	pugi::xml_parse_result result = dsndesc_doc.load_file(dsndesc_path.c_str());
 	if (!result)
-		throw std::filesystem::filesystem_error("Error at parsing " + dsndesc_path.string() + ": " + result.description(), std::make_error_code(std::errc::operation_canceled));
+		throw ApplicationException("Error at parsing " + dsndesc_path.string() + ": " + result.description(), std::make_error_code(std::errc::operation_canceled));
 	// browse the DSN tree to determine the max number of parents
 	dsn_walker walker(*this);
 	dsndesc_doc.traverse(walker);
 	if (walker.parse_error)
-		throw std::filesystem::filesystem_error("Error in DSN descriptor XML file " + dsndesc_path.string() + ": " + walker.error_msg,
-			std::make_error_code(std::errc::operation_not_supported));
+		throw ApplicationException("Error in DSN descriptor XML file " + dsndesc_path.string() + ": " + walker.error_msg,
+			std::make_error_code(std::errc::operation_not_supported));*/
+
+	std::filesystem::path config_file{ prog_path / "dsn-datatypes.cfg" };
+
+	config.readConfig(config_file);
+	getDSNDescription();
 	std::cout << "File " << dsndesc_path.filename() << ": DSN blocks description is version " << dsn_version << "." << std::endl;
 }
 
@@ -390,74 +607,18 @@ static std::string substc(const std::string& str, const char _old, const char _n
 	return res;
 }
 
-void DSNTreeApp::MainProcess(const std::filesystem::path& file)
+bool DSNTreeApp::checkVersion(const std::filesystem::path& filename, std::ifstream& file, const char EOL_delim, const file_utils::EOL EOL_type) const
 {
-	static const unsigned long long DEFAULT_INCREMENT = 1000;
-	static const unsigned long long AVER_ROW_LEN = 25;
-	static const char DSN_SEPARATOR = ',';
 	static const unsigned long long MAX_LINES_TO_VERSION = 20;
-	static const std::string VERSION_SIGNAL = "S10.G00.00.006";
-	static const std::string SEQ_KEY = "seq";
-	static const size_t SEQ_LENGTH = 5;
 
-	// initialize input file
-	auto fsize = std::filesystem::file_size(file);
-	auto EOL_type = file_utils::file_EOL(file);
-	auto EOL_len = EOL_length(EOL_type);
-	char EOL_delim = '\n';
-	if (EOL_type == file_utils::EOL::Mac)
-		EOL_delim = '\r';
-	std::ifstream infile(file, std::ios::binary);
 	std::uintmax_t lineCnt{ 0 };
-	
-	// initialize output file
-	auto outpath = getOutPath(file);
-	auto outpath_tmp = outpath;
-	outpath_tmp.replace_extension(".body.tmp");
-	if (std::filesystem::exists(outpath))
-		std::filesystem::remove(outpath);
-	if (std::filesystem::exists(outpath_tmp))
-		std::filesystem::remove(outpath_tmp);
-	if (transpose)
-		outpath.swap(outpath_tmp);
-	std::ofstream outfile(outpath, std::ios_base::out | std::ios::binary);
-	std::uintmax_t outCnt{ 0 };
-
-	// initialize tmp header file
-	std::string tmpname{ file.generic_string() };
-	tmpname.append(".head.tmp");
-	std::filesystem::path tmppath(tmpname);
-	if (std::filesystem::exists(tmppath))
-		std::filesystem::remove(tmppath);
-	std::ofstream tmpfile(tmppath, std::ios_base::out);
-
-	std::ostringstream header;
-	unsigned int headlen{ 0 };
-	for (size_t i = 0; i < dsntree_depth - 1; i++)
-	{
-		if (i != 0)
-			header << ';';
-		header << "Key" << i << ".Id;Key" << i << ".Val";
-		headlen += 2;
-	}
-	header << ";Block;Name;Seq;";
-	headlen += 3;
-
-	// transposition needs to write the header after processing entire file
-	if (!transpose)
-	{
-		header << "WT;Value";
-		outfile << header.str() << "\n";
-		outCnt++;
-	}
-
-	// print DSN version and check if it matches the DSN description version present in XML file, if requested
 	std::string buf;
 	bool cont{ true };
-	auto siglen = VERSION_SIGNAL.length();
-	while (infile && cont)
+	auto siglen = config.version.signal.length();
+
+	while (file && cont)
 	{
-		std::getline(infile, buf, EOL_delim);
+		std::getline(file, buf, EOL_delim);
 		lineCnt++;
 		auto buflen = buf.length();
 		bool errfmt{ false };
@@ -465,7 +626,7 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		if (buflen <= siglen)
 			errfmt = true;
 		else
-			if (buf.substr(0, siglen) == VERSION_SIGNAL)
+			if (buf.substr(0, siglen) == config.version.signal)
 			{
 				if (EOL_type == file_utils::EOL::Windows)
 					if (buf.back() == '\r')
@@ -482,7 +643,7 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 					{
 						value.pop_back();
 						value.erase(0, 1);
-						std::cout << "DSN version of file " << file.filename() << " is " << value << "." << std::endl;
+						std::cout << "DSN version of file " << filename << " is " << value << "." << std::endl;
 						cont = false;
 						if (version_check && dsn_version != value)
 						{
@@ -496,22 +657,55 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 			std::cout << "Unrecognized format '" << buf << "' at line " << lineCnt << ", file aborted." << std::endl;
 		if (lineCnt > MAX_LINES_TO_VERSION)		// version should be present at line 6
 		{
-			std::cout << "DSN version key '" << VERSION_SIGNAL << "' not found while this is obligatory, file aborted." << std::endl;
+			std::cout << "DSN version key '" << config.version.signal << "' not found while this is obligatory, file aborted." << std::endl;
 			errfmt = true;
 		}
 		if (errfmt || bad_version)
 		{
-			infile.close();
-			outfile.close();
-			tmpfile.close();
-			std::filesystem::remove(outpath);
-			std::filesystem::remove(tmppath);
-			return;
+			return false;
 		}
 	}
-	infile.seekg(0);
-	lineCnt = 0;
+	file.seekg(0);
+	return true;
 
+}
+
+std::string DSNTreeApp::buildParentString(size_t blIndex, size_t prevIndex, long seq, std::vector<size_t>& blockHeap)
+{
+	std::string parents;
+
+	auto p = block_hie[blIndex];
+	int pcount{ 0 };
+	while (p != 0)
+	{
+		parents = block_list[p].id + "." + block_list[p].key + ";=\"" + block_list[p].lastValue + "\";" + parents;
+		pcount++;
+		if (p == prevIndex)							// stores the seq of the parent while processing childs
+		{
+			blockHeap.push_back(p);
+			block_list[p].lastSeq = seq;
+		}
+		p = block_hie[p];
+	}
+	while (pcount < dsntree_depth - 1)
+	{
+		parents = parents + ";;";
+		pcount++;
+	}
+	return parents;
+}
+
+bool DSNTreeApp::processFile(const std::filesystem::path& filename, std::ifstream& infile, const std::uintmax_t fsize, const char EOL_delim, const file_utils::EOL EOL_type,
+	std::ofstream& outfile, std::uintmax_t& outCnt, unsigned int& headwt)
+{
+	static const unsigned long long DEFAULT_INCREMENT = 1000;
+	static const unsigned long long AVER_ROW_LEN = 25;
+	static const char DSN_SEPARATOR = ',';
+	static const std::string SEQ_KEY = "seq";
+	static const size_t SEQ_LENGTH = 5;
+
+	std::uintmax_t lineCnt{ 0 };
+	std::string buf;
 	long long currPos = infile.tellg();
 	unsigned long long increment;
 	if ((increment = ((fsize / AVER_ROW_LEN / 100) / DEFAULT_INCREMENT) * DEFAULT_INCREMENT) < DEFAULT_INCREMENT)
@@ -524,8 +718,8 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 	std::string parents;
 	unsigned long seq{ 0 };
 	unsigned int prevwt{ 0 };
-	unsigned int headwt{ 1 };
 	unsigned int wtcount{ 0 };
+
 	while (infile)
 	{
 		std::getline(infile, buf, EOL_delim);
@@ -565,36 +759,12 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 			}
 			if (errfmt)
 			{
-				tmpfile.close();
-				infile.close();
-				outfile.close();
-				std::filesystem::remove(outpath);
-				std::filesystem::remove(tmppath);
-				return;
+				return false;
 			}
 			bool assign_seqkey{ false };
 			if (blname != prevBlock)
 			{
-				// build parents string
-				parents.clear();
-				auto p = block_hie[blIndex];
-				int pcount{ 0 };
-				while (p != 0)
-				{
-					parents = block_list[p].id + "." + block_list[p].key + ";=\"" + block_list[p].lastValue + "\";" + parents;
-					pcount++;
-					if (p == prevIndex)							// stores the seq of the parent while processing childs
-					{
-						blockHeap.push_back(p);
-						block_list[p].lastSeq = seq;
-					}
-					p = block_hie[p];
-				}
-				while (pcount < dsntree_depth - 1)
-				{
-					parents = parents + ";;";
-					pcount++;
-				}
+				parents = buildParentString(blIndex, prevIndex, seq, blockHeap);
 				if (transpose && prevwt != 0)
 				{
 					outfile << '\n';
@@ -643,6 +813,8 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 			if (transpose && wtcount > 1)
 				outfile << ';';
 			outfile << "=\"" << wt << "\";";
+			if (use_cat_texts)
+				outfile << getCategoryText(blname, wt) << ";";
 			if (decimal_sep == ' ' || value.find('.') == std::string::npos || !isNumeric(value))
 				outfile << "=\"" << value << "\"";
 			else
@@ -659,7 +831,89 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 		if ((currPos = infile.tellg()) == -1)
 			currPos = fsize;
 		if (lineCnt % increment == 0 || !infile)
-			std::cout << "\rReading " << file.filename() << " : " << lineCnt << " lines (" << currPos * 100 / fsize << "%)";
+			std::cout << "\rReading " << filename << " : " << lineCnt << " lines (" << currPos * 100 / fsize << "%)";
+	}
+	return true;
+
+}
+
+void DSNTreeApp::MainProcess(const std::filesystem::path& file)
+{
+
+	// initialize input file
+	auto fsize = std::filesystem::file_size(file);
+	auto EOL_type = file_utils::file_EOL(file);
+	auto EOL_len = EOL_length(EOL_type);
+	char EOL_delim = '\n';
+	if (EOL_type == file_utils::EOL::Mac)
+		EOL_delim = '\r';
+	std::ifstream infile(file, std::ios::binary);
+	
+	// initialize output file
+	auto outpath = getOutPath(file);
+	auto outpath_tmp = outpath;
+	outpath_tmp.replace_extension(".body.tmp");
+	if (std::filesystem::exists(outpath))
+		std::filesystem::remove(outpath);
+	if (std::filesystem::exists(outpath_tmp))
+		std::filesystem::remove(outpath_tmp);
+	if (transpose)
+		outpath.swap(outpath_tmp);
+	std::ofstream outfile(outpath, std::ios_base::out | std::ios::binary);
+	std::uintmax_t outCnt{ 0 };
+
+	// initialize tmp header file
+	std::string tmpname{ file.generic_string() };
+	tmpname.append(".head.tmp");
+	std::filesystem::path tmppath(tmpname);
+	if (std::filesystem::exists(tmppath))
+		std::filesystem::remove(tmppath);
+	std::ofstream tmpfile(tmppath, std::ios_base::out);
+
+	std::ostringstream header;
+	unsigned int headlen{ 0 };
+	for (size_t i = 0; i < dsntree_depth - 1; i++)
+	{
+		if (i != 0)
+			header << ';';
+		header << "Key" << i << ".Id;Key" << i << ".Val";
+		headlen += 2;
+	}
+	header << ";Block;Name;Seq;";
+	headlen += 3;
+
+	// transposition needs to write the header after processing entire file
+	if (!transpose)
+	{
+		header << "WT;";
+		if (use_cat_texts)
+			header << "Text;";
+		header << "Value";
+		outfile << header.str() << "\n";
+		outCnt++;
+	}
+
+	// print DSN version and check if it matches the DSN description version present in XML file, if requested
+	if (!checkVersion(file.filename(), infile, EOL_delim, EOL_type))
+	{
+		infile.close();
+		outfile.close();
+		tmpfile.close();
+		std::filesystem::remove(outpath);
+		std::filesystem::remove(tmppath);
+		return;
+	}
+
+	// process the content of the input file
+	unsigned int headwt{ 1 };
+	if (!processFile(file.filename(), infile, fsize, EOL_delim, EOL_type, outfile, outCnt, headwt))
+	{ 
+		tmpfile.close();
+		infile.close();
+		outfile.close();
+		std::filesystem::remove(outpath);
+		std::filesystem::remove(tmppath);
+		return;
 	}
 
 	std::cout << std::endl;
@@ -672,13 +926,17 @@ void DSNTreeApp::MainProcess(const std::filesystem::path& file)
 	}
 	outfile.close();
 
+	// finalize output file when option transpose is enabled
 	if (transpose)
 	{
 		for (size_t i = 0; i < headwt; i++)
 		{
 			if (i != 0)
 				header << ';';
-			header << "WT" << i << ";Val" << i;
+			header << "WT" << i;
+			if (use_cat_texts)
+				header << ";Txt" << i;
+			header << ";Val" << i;
 		}
 		tmpfile << header.str() << std::endl;
 	}
