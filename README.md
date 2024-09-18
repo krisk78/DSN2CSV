@@ -5,7 +5,7 @@
 DSN2CSV is a program for converting DSN files (a standard used in France for companies’ social declarations to public administration).<br>
 It compiles the original file to match each block category with all its parent blocks and their key (usually the category of the block whose value is unique).
 
-The blocks and their hierarchy, the categories and their labels are extracted from the official document dsn-datatypes-CTXXXX.xlsx provided by the administration.<br>
+The blocks and their hierarchy, the categories and their labels are extracted from the official document [dsn-datatypes-CTXXXX.xlsx](https://www.net-entreprises.fr/declaration/norme-et-documentation-dsn/) provided by the administration.<br>
 The file dsn-datatypes.cfg defines the configuration that allows this file to be used, notably adding the notion of parent missing in the ‘Header’ sheet as well as the definition of specific key categories.
 
 The “seq” value for the key is used when there is no category whose value is unique within all records of the same block.<br>
