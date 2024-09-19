@@ -22,7 +22,7 @@ Par exemple, créez le fichier DSN2CSV.bat dans le même dossier que le fichier 
 @Echo OFF
 Set _this=%0
 Set _exe=%_this:DSN2CSV.bat=dsn2csv.exe%
-%_exe% %* /r:dsn-datatypes-CT2024.xlsx /l /t /v
+%_exe% %* /r:dsn-datatypes-CT2024.xlsx /f /l /t /v
 Pause
 ```
 Les fichiers qui seront déposés sur le fichier de commande DSN2CSV.bat seront automatiquement convertis, ici avec ajout des libellés et en mode transposition.<br>
