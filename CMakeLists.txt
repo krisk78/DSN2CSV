@@ -10,7 +10,7 @@ endif()
 
 # Set project name and its dependencies
 set(PROJECT_NAME "dsn2csv")
-set(${PROJECT_NAME}_DEPENDENCIES "consoleapp-static;str-utils-static;file-utils-static;pugixml")
+set(${PROJECT_NAME}_DEPENDENCIES ";libconfig;xlnt;consoleapp-static;str-utils-static;file-utils-static")
 set(${PROJECT_NAME}_INTERFACES "")
 
 # Get the project version from vcpkg.json

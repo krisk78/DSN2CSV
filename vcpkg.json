@@ -1,6 +1,6 @@
 {
   "name": "dsn2csv",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Application that converts a DSN file to CSV",
   "homepage": "https://github.com/krisk78/DSN2CSV",
   "license": "MIT",
@@ -13,9 +13,10 @@
       "name": "vcpkg-cmake-config",
       "host": true
     },
+    "libconfig",
+    "xlnt",
     "consoleapp-static",
     "str-utils-static",
-    "file-utils-static",
-    "pugixml"
+    "file-utils-static"
   ]
 }
